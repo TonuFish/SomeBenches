@@ -1,0 +1,44 @@
+<Project>
+	<PropertyGroup>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+		<ImplicitUsings>disable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+	</PropertyGroup>
+
+	<PropertyGroup Label="Compilation Flags">
+		<JetBrains>false</JetBrains>
+	</PropertyGroup>
+
+	<PropertyGroup Label="Analysers">
+		<AnalysisLevel>latest-all</AnalysisLevel>
+		<IsAotCompatible>true</IsAotCompatible>
+		<NoWarn>CA1303;CA1515;CA1822;CA5394;S125;S3267</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup Label="Build Settings">
+		<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+		<DebugType>pdbonly</DebugType>
+		<DebugSymbols>true</DebugSymbols>
+		<PlatformTarget>AnyCPU</PlatformTarget>
+	</PropertyGroup>
+
+	<ItemGroup Label="Solution-wide Code">
+		<Compile Include="$(SolutionDir)\ModuleSettings.cs" Visible="false" />
+	</ItemGroup>
+
+	<ItemGroup Label="Packages">
+		<PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
+		<PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.15.2" />
+	</ItemGroup>
+
+	<Choose>
+		<When Condition="'$(JetBrains)'">
+			<PropertyGroup>
+				<DefineConstants>$(DefineConstants);JETBRAINS</DefineConstants>
+			</PropertyGroup>
+			<ItemGroup>
+				<PackageReference Include="BenchmarkDotNet.Diagnostics.dotTrace" Version="0.15.2" />
+			</ItemGroup>
+		</When>
+	</Choose>
+</Project>
