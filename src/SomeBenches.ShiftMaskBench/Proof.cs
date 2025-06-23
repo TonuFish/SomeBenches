@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 namespace SomeBenches.ShiftMaskBench;
@@ -42,33 +44,36 @@ internal static class Proof
 		RunUnsigned();
 	}
 
-	[DoesNotReturn]
+	[DoesNotReturn, DebuggerHidden]
 	private static void ThrowException(string? message = null)
 	{
 		throw new InvalidOperationException(message);
 	}
 
-	[DoesNotReturn]
+	[DoesNotReturn, DebuggerHidden]
 	private static T ThrowException<T>(string? message = null)
 	{
 		throw new InvalidOperationException(message);
+	}
+
+	[StructLayout(LayoutKind.Sequential, Pack = 1, Size = 16)]
+	private readonly ref struct SixteenBytes
+	{
+		public readonly ulong Lower { get; }
+		public readonly ulong Upper { get; }
 	}
 
 	#region Signed
 
 	private static readonly UInt128 _u128Mask = UInt128.Parse(
 		"7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-		System.Globalization.NumberStyles.AllowHexSpecifier);
+		System.Globalization.NumberStyles.AllowHexSpecifier,
+		System.Globalization.CultureInfo.InvariantCulture);
 
 	public static void RunSigned()
 	{
-		Console.WriteLine("Starting sbyte...");
 		RunForSignedType<sbyte>();
-		Console.WriteLine("...Finished sbyte.");
-
-		Console.WriteLine("Starting short...");
 		RunForSignedType<short>();
-		Console.WriteLine("...Finished short.");
 	}
 
 	private static unsafe void RunForSignedType<T>()
@@ -115,50 +120,55 @@ internal static class Proof
 	{
 		if (sizeof(T) == 1)
 		{
-			const int sizeOfMask = 8 * 1;
-			var a = sizeOfMask - shift;
+			const int bitsInMask = 8 * 1;
+			var a = bitsInMask - shift;
 			var b = Math.Abs(
 				BitOperations.LeadingZeroCount((uint)(Unsafe.BitCast<T, byte>(mask) & (byte)0x7F))
 				- (8 * 3)
-				- sizeOfMask);
+				- bitsInMask);
 			return a >= b;
 		}
 		else if (sizeof(T) == 2)
 		{
-			const int sizeOfMask = 8 * 2;
-			var a = sizeOfMask - shift;
+			const int bitsInMask = 8 * 2;
+			var a = bitsInMask - shift;
 			var b = Math.Abs(
 				BitOperations.LeadingZeroCount((uint)(Unsafe.BitCast<T, ushort>(mask) & (ushort)0x7F_FF))
 				- (8 * 2)
-				- sizeOfMask);
+				- bitsInMask);
 			return a >= b;
 		}
 		else if (sizeof(T) == 4)
 		{
-			const int sizeOfMask = 8 * 4;
-			var a = sizeOfMask - shift;
+			const int bitsInMask = 8 * 4;
+			var a = bitsInMask - shift;
 			var b = Math.Abs(
 				BitOperations.LeadingZeroCount(Unsafe.BitCast<T, uint>(mask) & 0x7F_FF_FF_FFU)
-				- sizeOfMask);
+				- bitsInMask);
 			return a >= b;
 		}
 		else if (sizeof(T) == 8)
 		{
-			const int sizeOfMask = 8 * 8;
-			var a = sizeOfMask - shift;
+			const int bitsInMask = 8 * 8;
+			var a = bitsInMask - shift;
 			var b = Math.Abs(
 				BitOperations.LeadingZeroCount(Unsafe.BitCast<T, ulong>(mask) & 0x7F_FF_FF_FF_FF_FF_FF_FFUL)
-				- sizeOfMask);
+				- bitsInMask);
 			return a >= b;
 		}
-		// TODO: Int128
-		//else if (sizeof(T) == 16)
-		//{
-			//const int sizeOfMask = 8 * 16;
-			//var a = sizeOfMask - shift;
-			//var b = ASDF;
-			//return a >= b;
-		//}
+		else if (sizeof(T) == 16)
+		{
+			const int bitsInMask = 8 * 16;
+			var a = bitsInMask - shift;
+			var packed = Unsafe.BitCast<UInt128, SixteenBytes>(Unsafe.BitCast<T, UInt128>(mask) & _u128Mask);
+			var leadingZeroes = BitOperations.LeadingZeroCount(packed.Upper);
+			if (leadingZeroes == 64)
+			{
+				leadingZeroes += BitOperations.LeadingZeroCount(packed.Lower);
+			}
+			var b = Math.Abs(leadingZeroes - bitsInMask);
+			return a >= b;
+		}
 
 		return ThrowException<bool>();
 	}
@@ -169,13 +179,8 @@ internal static class Proof
 
 	public static void RunUnsigned()
 	{
-		Console.WriteLine("Starting byte...");
 		RunForUnsignedType<byte>();
-		Console.WriteLine("...Finished byte.");
-
-		Console.WriteLine("Starting ushort...");
 		RunForUnsignedType<ushort>();
-		Console.WriteLine("...Finished ushort.");
 	}
 
 	private static unsafe void RunForUnsignedType<T>()
@@ -222,46 +227,51 @@ internal static class Proof
 	{
 		if (sizeof(T) == 1)
 		{
-			const int sizeOfMask = 8 * 1;
-			var a = sizeOfMask - shift;
+			const int bitsInMask = 8 * 1;
+			var a = bitsInMask - shift;
 			var b = Math.Abs(
 				BitOperations.LeadingZeroCount((uint)Unsafe.BitCast<T, byte>(mask))
 				- (8 * 3)
-				- sizeOfMask);
+				- bitsInMask);
 			return a >= b;
 		}
 		else if (sizeof(T) == 2)
 		{
-			const int sizeOfMask = 8 * 2;
-			var a = sizeOfMask - shift;
+			const int bitsInMask = 8 * 2;
+			var a = bitsInMask - shift;
 			var b = Math.Abs(
 				BitOperations.LeadingZeroCount((uint)Unsafe.BitCast<T, ushort>(mask))
 				- (8 * 2)
-				- sizeOfMask);
+				- bitsInMask);
 			return a >= b;
 		}
 		else if (sizeof(T) == 4)
 		{
-			const int sizeOfMask = 8 * 4;
-			var a = sizeOfMask - shift;
-			var b = Math.Abs(BitOperations.LeadingZeroCount(Unsafe.BitCast<T, uint>(mask)) - sizeOfMask);
+			const int bitsInMask = 8 * 4;
+			var a = bitsInMask - shift;
+			var b = Math.Abs(BitOperations.LeadingZeroCount(Unsafe.BitCast<T, uint>(mask)) - bitsInMask);
 			return a >= b;
 		}
 		else if (sizeof(T) == 8)
 		{
-			const int sizeOfMask = 8 * 8;
-			var a = sizeOfMask - shift;
-			var b = Math.Abs(BitOperations.LeadingZeroCount(Unsafe.BitCast<T, ulong>(mask)) - sizeOfMask);
+			const int bitsInMask = 8 * 8;
+			var a = bitsInMask - shift;
+			var b = Math.Abs(BitOperations.LeadingZeroCount(Unsafe.BitCast<T, ulong>(mask)) - bitsInMask);
 			return a >= b;
 		}
-		// TODO: UInt128
-		//else if (sizeof(T) == 16)
-		//{
-			//const int sizeOfMask = 8 * 16;
-			//var a = sizeOfMask - shift;
-			//var b = ASDF;
-			//return a >= b;
-		//}
+		else if (sizeof(T) == 16)
+		{
+			const int bitsInMask = 8 * 16;
+			var a = bitsInMask - shift;
+			var packed = Unsafe.BitCast<T, SixteenBytes>(mask);
+			var leadingZeroes = BitOperations.LeadingZeroCount(packed.Upper);
+			if (leadingZeroes == 64)
+			{
+				leadingZeroes += BitOperations.LeadingZeroCount(packed.Lower);
+			}
+			var b = Math.Abs(leadingZeroes - bitsInMask);
+			return a >= b;
+		}
 
 		return ThrowException<bool>();
 	}
