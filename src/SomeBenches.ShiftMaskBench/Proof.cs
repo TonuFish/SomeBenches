@@ -65,11 +65,6 @@ internal static class Proof
 
 	#region Signed
 
-	private static readonly UInt128 _u128Mask = UInt128.Parse(
-		"7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
-		System.Globalization.NumberStyles.AllowHexSpecifier,
-		System.Globalization.CultureInfo.InvariantCulture);
-
 	public static void RunSigned()
 	{
 		RunForSignedType<sbyte>();
@@ -160,8 +155,8 @@ internal static class Proof
 		{
 			const int bitsInMask = 8 * 16;
 			var a = bitsInMask - shift;
-			var packed = Unsafe.BitCast<UInt128, SixteenBytes>(Unsafe.BitCast<T, UInt128>(mask) & _u128Mask);
-			var leadingZeroes = BitOperations.LeadingZeroCount(packed.Upper);
+			var packed = Unsafe.BitCast<UInt128, SixteenBytes>(Unsafe.BitCast<T, UInt128>(mask));
+			var leadingZeroes = BitOperations.LeadingZeroCount(packed.Upper & 0x7F_FF_FF_FF_FF_FF_FF_FFUL);
 			if (leadingZeroes == 64)
 			{
 				leadingZeroes += BitOperations.LeadingZeroCount(packed.Lower);
