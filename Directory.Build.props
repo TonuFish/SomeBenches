@@ -27,8 +27,8 @@
 	</ItemGroup>
 
 	<ItemGroup Label="Packages">
-		<PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
-		<PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.15.2" />
+		<PackageReference Include="BenchmarkDotNet" Version="0.15.8" />
+		<PackageReference Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.15.8" />
 	</ItemGroup>
 
 	<Choose>
@@ -37,7 +37,7 @@
 				<DefineConstants>$(DefineConstants);JETBRAINS</DefineConstants>
 			</PropertyGroup>
 			<ItemGroup>
-				<PackageReference Include="BenchmarkDotNet.Diagnostics.dotTrace" Version="0.15.2" />
+				<PackageReference Include="BenchmarkDotNet.Diagnostics.dotTrace" Version="0.15.8" />
 			</ItemGroup>
 		</When>
 	</Choose>
